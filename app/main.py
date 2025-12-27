@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from random import uniform
+from app.core.data import get_latest_temperatures
 
 app = FastAPI(
     title="HiveBox API",
@@ -37,3 +38,16 @@ async def get_sensor_data():
         humidity_percent=humidity,
         status=status
     )
+
+@app.get("/temperature")
+async def get_average_temperature():
+    """
+    Returns the average temperature from all senseBoxes (only data ≤ 1h old)
+    """
+    temps = await get_latest_temperatures()
+
+    if not temps:
+        raise HTTPException(status_code=503, detail="No recent temperature data available")
+
+    avg_temp = round(sum(temps) / len(temps), 1)
+    return {"average_temperature_c": avg_temp, "number_of_boxes_used": len(temps)}
