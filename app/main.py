@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 from random import uniform
 from app.core.data import get_latest_temperatures
@@ -8,6 +9,8 @@ app = FastAPI(
     description="Beekeeping sensor data aggregator (work in progress)",
     version="0.0.1"
 )
+
+Instrumentator().instrument(app).expose(app)
 
 class SensorReading(BaseModel):
     temperature_c: float
