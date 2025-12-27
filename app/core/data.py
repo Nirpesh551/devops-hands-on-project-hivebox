@@ -9,36 +9,32 @@ SENSEBOX_IDS = [
 ]
 
 async def get_latest_temperatures() -> List[float]:
-    """
-    Fetch the most recent temperature (°C) from each senseBox.
-    Only include values not older than 1 hour.
-    """
     temperatures = []
     cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         for box_id in SENSEBOX_IDS:
             try:
-                response = await client.get(f"https://api.opensensemap.org/boxes/{box_id}")
-                response.raise_for_status()
-                data = response.json()
+                r = await client.get(f"https://api.opensensemap.org/boxes/{box_id}")
+                r.raise_for_status()
+                box = r.json()
 
-                for sensor in data.get("sensors", []):
-                    if "Temperatur" in sensor.get("title", ""):  # German spelling
+                for sensor in box.get("sensors", []):
+                    title = sensor.get("title", "")
+                    if "Temperatur" in title:  # German spelling is standard here
                         last = sensor.get("lastMeasurement", {})
                         value_str = last.get("value")
-                        timestamp_str = last.get("createdAt")
+                        created_at = last.get("createdAt")
 
-                        if value_str and timestamp_str:
+                        if value_str and created_at:
                             try:
-                                ts = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+                                ts = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
                                 if ts >= cutoff:
                                     temperatures.append(float(value_str))
                             except (ValueError, TypeError):
-                                pass  # skip invalid values/timestamps
-                        break  # assume only one temp sensor per box
-
+                                continue
+                        break  # one temp sensor per box
             except Exception as e:
-                print(f"Error fetching box {box_id}: {e}")
+                print(f"Failed to fetch box {box_id}: {e}")
 
     return temperatures
