@@ -53,4 +53,12 @@ async def get_average_temperature():
         raise HTTPException(status_code=503, detail="No recent temperature data available")
 
     avg_temp = round(sum(temps) / len(temps), 1)
-    return {"average_temperature_c": avg_temp, "number_of_boxes_used": len(temps)}
+
+    if avg_temp < 10:
+        status = "Too Cold"
+    elif avg_temp <= 36:
+        status = "Good"
+    else:
+        status = "Too Hot"
+    
+    return {"average_temperature_c": avg_temp, "number_of_boxes_used": len(temps), "status": status}
