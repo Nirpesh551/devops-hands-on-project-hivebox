@@ -1,0 +1,39 @@
+name: CI - Build & Smoke Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Get the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up Docker Buildx (helps with faster/more reliable builds)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3. Build the Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t hivebox:ci-${{ github.sha }} .
+
+      # 4. Run container and test /version endpoint
+      - name: Run container and smoke test
+        run: |
+          docker run --rm -d -p 8000:8000 --name hivebox-test hivebox:ci-${{ github.sha }}
+          sleep 8  # Give the app time to start
+          
+          # Check the version endpoint
+          curl --fail --retry 3 --retry-delay 2 http://localhost:8000/version || exit 1
+          
+          # Optional: also check health
+          curl --fail http://localhost:8000/health || exit 1
+          
+          docker stop hivebox-test
