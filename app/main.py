@@ -6,6 +6,10 @@ app = FastAPI(
     version="0.0.1"
 )
 
+@app.get("/version")
+async def get_version():
+    return {"version": "v0.0.1"}
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "version": "v0.0.1"}
