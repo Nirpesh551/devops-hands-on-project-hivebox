@@ -1,0 +1,37 @@
+replicaCount: 1
+
+image:
+  repository: docker.io/library/hivebox
+  tag: "0.0.1"
+  pullPolicy: Never
+
+service:
+  type: NodePort
+  port: 80
+  nodePort: 30080
+
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: hivebox.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: hivebox-tls-secret
+      hosts:
+        - hivebox.local
+
+probes:
+  enabled: true
+  readiness:
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    failureThreshold: 3
+  liveness:
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    failureThreshold: 3
