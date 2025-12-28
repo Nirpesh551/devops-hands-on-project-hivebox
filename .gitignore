@@ -15,3 +15,5 @@ ENV/
 # Editor directories
 .vscode/
 .idea/
+
+certs/*.key
