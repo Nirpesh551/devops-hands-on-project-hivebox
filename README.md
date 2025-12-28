@@ -51,5 +51,57 @@ Here is a pre-start checklist:
 ---
 
 ## Implementation
+## My Implementation of HiveBox Project (as of December 28, 2025)
 
-** ADD YOUR IMPLEMENTATION DOCUMENTATION HERE **
+This is my personal fork and implementation of the HiveBox hands-on project from the DevOps roadmap.
+
+### What I have built so far
+
+- **Backend**: FastAPI application with 3 endpoints:
+  - `/version` → returns current API version
+  - `/health` → simple health check
+  - `/temperature` → calculates average temperature from 3 real public senseBoxes using openSenseMap API + adds status ("Too Cold", "Good", "Too Hot")
+- **Observability**: Prometheus metrics endpoint `/metrics`
+- **Containerization**: Multi-stage Dockerfile (Python 3.12 slim → small production image)
+- **Kubernetes**: Deployed to **microk8s** on Ubuntu server
+  - Deployment with 1 replica
+  - NodePort Service (port 30080 on host)
+  - Ingress with self-signed TLS → HTTPS access at https://hivebox.local
+- **Packaging**: Helm chart (`hivebox-chart`) for easy install/upgrade
+- **TLS**: Self-signed certificate for HTTPS (browser shows warning, but works)
+
+### Current Architecture
+Browser → HTTPS (Ingress + self-signed TLS) → NGINX Ingress Controller
+↓
+NodePort Service (30080)
+↓
+Deployment → Pod (FastAPI)
+↓
+Calls → openSenseMap API (real data)
+
+
+### How to Run It (Step by Step)
+
+#### Prerequisites (on Ubuntu server with microk8s)
+- microk8s installed & running
+- Ingress addon enabled: `microk8s enable ingress`
+- Docker
+- Helm 3+
+
+#### 1. Clone your fork & build Docker image
+
+git clone https://github.com/Nirpesh551/devops-hands-on-project-hivebox.git
+cd devops-hands-on-project-hivebox
+
+docker build -t hivebox:0.0.1 .
+microk8s ctr image import <(docker save hivebox:0.0.1)
+
+#### 2. Deploy with Helm (recommended)
+helm upgrade --install hivebox ./hivebox-chart
+
+#### 3. Access the application
+Best way (HTTPS)
+https://hivebox.local/docs
+
+
+
